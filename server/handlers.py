@@ -83,7 +83,6 @@ class PrintDBHandler(object):
   @templeton.handlers.json_response
   def GET(self):
     print("Accessing entire device DB")
-    postdata = web.input()
     args, body = templeton.handlers.get_request_parms()
     deviceList = open("devices.txt")
     devices = pickle.load(deviceList)

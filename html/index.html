@@ -65,7 +65,8 @@
 
   <div id="waiuMain"></div>
 </div>
-<div id="rightContent"></div>
+<div id="rightcontent"></div>
+<br style="clear:both"/>
 </body>
 
 <script>
@@ -122,9 +123,8 @@ $(document).ready(function() {
       return false;
   });
 
-  $.getJSON("api/printDB", function(data) {
-    alert("BAMF2");
-    var rightContent = document.getElementsById("rightContent");
+  $.getJSON("api/printDB/", function(data) {
+    var rightContent = document.getElementById("rightcontent");
     var tbl = document.createElement("table");
     var tblBody = document.createElement("tbody");
     for( key in data ) {

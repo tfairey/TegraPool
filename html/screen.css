@@ -24,5 +24,13 @@ p, ol, li, label{
     font-family: 'Helvetica Neue',Helvetica, Arial;
 }
 div{
-	    margin:2px;
+  margin:2px;
+}
+#rightcontent{
+  width:500px;
+  float:right;
+}
+#leftcontent{
+  width:300px;
+  float:left;
 }
