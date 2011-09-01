@@ -1,0 +1,150 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <link rel="stylesheet" href="/templeton/style/Aristo/jquery-ui-1.8.7.custom.css" type="text/css"/>
+    <link href='screen.css' rel='stylesheet' media='all'>
+    <script src="/templeton/scripts/jquery-1.6.1.min.js"></script>
+    <script src="/templeton/scripts/jquery-ui-1.8.13.custom.min.js"></script>
+    <title>TegraPool</title>
+</head>
+
+<h1>TegraPool Checkout System</h1>
+
+<body>
+<div id="leftcontent">
+  <h2>Checkout</h2>
+  <p>
+    Please give your name and type of device you want to take out.
+  </p>
+  <form id="checkoutForm" method="post">
+    <div class="input-box">
+      <label>Name</label>
+      <input id='checkout-user' type="text" name="name" />
+    </div>
+    <div class="input-box">
+      <label>Device Type</label>
+      <select id="checkout-deviceType" type="text" required><option>Tegra</option><option>Other...</option></select>
+    </div>
+    <div class="submit">
+        <input type="submit" id="add-checkout-job" value="Check Out" />
+    </div>
+  </form>
+
+  <div id="main"></div>
+  <h2>Checkin</h2>
+  <p>
+    If you are finished with your device, please Check In the device.
+  </p>
+  <form id="checkinForm" method="post">
+    <div class="input-box">
+      <label>Device IP</label>
+      <input id='checkin-deviceIP' type="text" name="name" />
+    </div>
+    <div class="submit">
+      <input type="submit" id="add-checkin-job" value="Check In" />
+    </div>
+  </form>
+
+  <div id="checkinMain"></div>
+
+  <h2>What Am I Using?</h2>
+  <p>
+    To see what you have checked out, enter your username.
+  </p>
+  <form id="waiuForm" method="post">
+    <div class="input-box">
+      <label>Username</label>
+      <input id='waiu-user' type="text" name="name" />
+    </div>
+    <div class="submit">
+      <input type="submit" id="add-checkin-job" value="What Am I Using?" />
+    </div>
+  </form>
+
+  <div id="waiuMain"></div>
+</div>
+<div id="rightContent"></div>
+</body>
+
+<script>
+$(document).ready(function() {
+  $("form#checkoutForm").submit(function() {
+      $.ajax({
+        type: 'POST',
+        url: "api/checkout/",
+        data: { 'user': $('#checkout-user').val(),
+                'deviceType': $('#checkout-deviceType').val()
+              },
+        success: function(data) {
+    alert(data);
+        },
+        error: function(obj, textStatus, errorThrown) {
+          alert("Error Thrown!"+JSON.stringify(obj));
+        },
+        dataType: 'json'
+      });
+      $('#main').replaceWith('Submitted. IP To be returned shortly');
+      return false;
+  });
+  $("form#checkinForm").submit(function() {
+      $.ajax({
+        type: 'POST',
+        url: "api/checkin/",
+        data: { 'ip': $('#checkin-deviceIP').val()
+              },
+        success: function(data) {
+    alert(data);
+        },
+        error: function(obj, textStatus, errorThrown) {
+          alert("Error Thrown!"+JSON.stringify(obj));
+        },
+        dataType: 'json'
+      });
+      $('#checkinMain').replaceWith('Submitted.');
+      return false;
+  });
+  $("form#waiuForm").submit(function() {
+      $.ajax({
+        type: 'POST',
+        url: "api/waiu/",
+        data: { 'user': $('#waiu-user').val()
+              },
+        success: function(data) {
+          $('#waiuMain').html(data);
+        },
+        error: function(obj, textStatus, errorThrown) {
+          alert("Error Thrown!"+JSON.stringify(obj));
+        },
+        dataType: 'json'
+      });
+      return false;
+  });
+
+  $.getJSON("api/printDB", function(data) {
+    alert("BAMF2");
+    var rightContent = document.getElementsById("rightContent");
+    var tbl = document.createElement("table");
+    var tblBody = document.createElement("tbody");
+    for( key in data ) {
+      var row = document.createElement("tr");
+      var cell = document.createElement("td");
+      var cellText = document.createTextNode(key);
+      cell.appendChild(cellText);
+      row.appendChild(cell);
+      for(var i = 0; i < 2; i++) {
+        var attrCell = document.createElement("td");
+        var attrText = document.createTextNode(data[key][i]);
+        attrCell.appendChild(attrText);
+        row.appendChild(attrCell);
+      }
+      tblBody.appendChild(row);
+    }
+    tbl.appendChild(tblBody);
+    rightContent.appendChild(tbl);
+    tbl.setAttribute("border","2");
+  });
+});
+</script>
+</html>
