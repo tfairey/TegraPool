@@ -20,8 +20,12 @@
   </p>
   <form id="checkoutForm" method="post">
     <div class="input-box">
-      <label>Name</label>
+      <label>LDAP User Name</label>
       <input id='checkout-user' type="text" name="name" />
+    </div>
+    <div class="input-box">
+      <label>LDAP Password</label>
+      <input id='checkout-password' type="password" name="password" />
     </div>
     <div class="input-box">
       <label>Device Type</label>
@@ -55,7 +59,7 @@
   </p>
   <form id="waiuForm" method="post">
     <div class="input-box">
-      <label>Username</label>
+      <label>LDAP Email</label>
       <input id='waiu-user' type="text" name="name" />
     </div>
     <div class="submit">
@@ -76,13 +80,14 @@ $(document).ready(function() {
         type: 'POST',
         url: "api/checkout/",
         data: { 'user': $('#checkout-user').val(),
+                'password': $('#checkout-password').val(),
                 'deviceType': $('#checkout-deviceType').val()
               },
         success: function(data) {
     alert(data);
         },
         error: function(obj, textStatus, errorThrown) {
-          alert("Error Thrown!"+JSON.stringify(obj));
+          alert("Error Thrown!");
         },
         dataType: 'json'
       });
@@ -127,13 +132,35 @@ $(document).ready(function() {
     var rightContent = document.getElementById("rightcontent");
     var tbl = document.createElement("table");
     var tblBody = document.createElement("tbody");
+    var headerRow = document.createElement("tr");
+    var header1 = document.createElement("th");
+    var header2 = document.createElement("th");
+    var header3 = document.createElement("th");
+    var header4 = document.createElement("th");
+    var header5 = document.createElement("th");
+    var headerText = document.createTextNode("Name");
+    header1.appendChild(headerText);
+    headerText = document.createTextNode("IP");
+    header2.appendChild(headerText);
+    headerText = document.createTextNode("State");
+    header3.appendChild(headerText);
+    headerText = document.createTextNode("User");
+    header4.appendChild(headerText);
+    headerText = document.createTextNode("Email");
+    header5.appendChild(headerText);
+    headerRow.appendChild(header1);
+    headerRow.appendChild(header2);
+    headerRow.appendChild(header3);
+    headerRow.appendChild(header4);
+    headerRow.appendChild(header5);
+    tbl.appendChild(headerRow);
     for( key in data ) {
       var row = document.createElement("tr");
       var cell = document.createElement("td");
       var cellText = document.createTextNode(key);
       cell.appendChild(cellText);
       row.appendChild(cell);
-      for(var i = 0; i < 2; i++) {
+      for(var i = 0; i < 4; i++) {
         var attrCell = document.createElement("td");
         var attrText = document.createTextNode(data[key][i]);
         attrCell.appendChild(attrText);

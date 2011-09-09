@@ -27,10 +27,10 @@ div{
   margin:2px;
 }
 #rightcontent{
-  width:500px;
+  /*width:100px;*/
   float:right;
 }
 #leftcontent{
-  width:300px;
+  width:500px;
   float:left;
 }
