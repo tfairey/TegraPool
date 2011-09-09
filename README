@@ -1,2 +1,5 @@
 System for checking in and out devices. These devices are stored as an IP address, and can then be checked in and out through a templeton-based server frontend.
+
+Currently using LDAP communication, and a simple MySQL database on the backend.
+
 Based off gofaster dashboard as a templeton example, so there are some cases where that is used.

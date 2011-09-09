@@ -1,8 +1,8 @@
 import templeton.handlers
 import web
-import pickle
 import MySQLdb
 import ldap
+import re
 from devicemanagerSUT import DeviceManagerSUT
 
 # URLs go here. "/api/" will be automatically prepended to each.
@@ -22,7 +22,16 @@ def setupDevice(ip):
 #Puts the device in the same state that it started in.
 #The major step in this is rebooting the device.
 def resetDevice(ip):
+  safeFiles = ["Android",".android_secure","LOST.DIR"]
   dm = DeviceManagerSUT(ip)
+  doomedFiles = dm.listFiles('/mnt/sdcard/')
+  for fileName in doomedFiles:
+    if fileName not in safeFiles:
+      print "DELETING " + fileName
+      if dm.dirExists('/mnt/sdcard/'+fileName):
+        dm.removeDir('/mnt/sdcard/'+fileName)
+      else:
+        dm.removeFile('/mnt/sdcard/'+fileName)
   status = dm.reboot()
   print(status)
   return
@@ -65,7 +74,7 @@ def findUnusedDevice(deviceType, user, password):
   c = db.cursor();
   #Lock the table, as we don't want people checking them out simultaneously
   c.execute("LOCK TABLE devices WRITE;")
-  c.execute("SELECT deviceIP, state FROM devices WHERE state = 'REBOOTED';")
+  c.execute("SELECT deviceIP, state FROM devices WHERE state = 'AVAILABLE';")
   row = c.fetchone()
   if row:
     c.execute("UPDATE devices SET state = 'CHECKED_OUT', user = '" + user +
@@ -84,6 +93,13 @@ def findUnusedDevice(deviceType, user, password):
 #Finds the device in the device list and sets the user to None
 #Returns true if the device was checked out previously.
 def makeDeviceAvailable(ip):
+  ipRegex = re.compile("(\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3})")
+  ipMatch = ipRegex.search(ip)
+  if ipMatch:
+    ip = ipMatch.groups()[0]
+  else:
+    print "Not satisying Regex"
+    return False;
   db = MySQLdb.connect(user="tegra",db="TegraPool")
   c = db.cursor();
   c.execute("LOCK TABLE devices WRITE;")
@@ -104,10 +120,17 @@ def makeDeviceAvailable(ip):
   return True
 
 #Returns a list of device names and IPs that are checked out to that user.
-def getUsedList(user):
+def getUsedList(email):
+  emailRegex = re.compile("(\S+@\S+\.\S+)")
+  emailMatch = emailRegex.search(email)
+  if emailMatch:
+    email = emailMatch.groups()[0]
+  else:
+    return [];
   db = MySQLdb.connect(user="tegra",db="TegraPool")
   c = db.cursor();
-  c.execute("SELECT deviceid, deviceIP FROM devices WHERE email = '" + user + "';")
+  c.execute("SELECT deviceid, deviceIP FROM devices WHERE email = '"
+            + email + "';")
   result = c.fetchall()
   c.close()
   db.close()

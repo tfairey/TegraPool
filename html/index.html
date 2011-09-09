@@ -84,7 +84,8 @@ $(document).ready(function() {
                 'deviceType': $('#checkout-deviceType').val()
               },
         success: function(data) {
-    alert(data);
+          loadTable();
+          alert(data);
         },
         error: function(obj, textStatus, errorThrown) {
           alert("Error Thrown!");
@@ -101,7 +102,8 @@ $(document).ready(function() {
         data: { 'ip': $('#checkin-deviceIP').val()
               },
         success: function(data) {
-    alert(data);
+          loadTable();
+          alert(data);
         },
         error: function(obj, textStatus, errorThrown) {
           alert("Error Thrown!"+JSON.stringify(obj));
@@ -127,51 +129,59 @@ $(document).ready(function() {
       });
       return false;
   });
-
-  $.getJSON("api/printDB/", function(data) {
-    var rightContent = document.getElementById("rightcontent");
-    var tbl = document.createElement("table");
-    var tblBody = document.createElement("tbody");
-    var headerRow = document.createElement("tr");
-    var header1 = document.createElement("th");
-    var header2 = document.createElement("th");
-    var header3 = document.createElement("th");
-    var header4 = document.createElement("th");
-    var header5 = document.createElement("th");
-    var headerText = document.createTextNode("Name");
-    header1.appendChild(headerText);
-    headerText = document.createTextNode("IP");
-    header2.appendChild(headerText);
-    headerText = document.createTextNode("State");
-    header3.appendChild(headerText);
-    headerText = document.createTextNode("User");
-    header4.appendChild(headerText);
-    headerText = document.createTextNode("Email");
-    header5.appendChild(headerText);
-    headerRow.appendChild(header1);
-    headerRow.appendChild(header2);
-    headerRow.appendChild(header3);
-    headerRow.appendChild(header4);
-    headerRow.appendChild(header5);
-    tbl.appendChild(headerRow);
-    for( key in data ) {
-      var row = document.createElement("tr");
-      var cell = document.createElement("td");
-      var cellText = document.createTextNode(key);
-      cell.appendChild(cellText);
-      row.appendChild(cell);
-      for(var i = 0; i < 4; i++) {
-        var attrCell = document.createElement("td");
-        var attrText = document.createTextNode(data[key][i]);
-        attrCell.appendChild(attrText);
-        row.appendChild(attrCell);
-      }
-      tblBody.appendChild(row);
-    }
-    tbl.appendChild(tblBody);
-    rightContent.appendChild(tbl);
-    tbl.setAttribute("border","2");
-  });
+  loadTable()
 });
+</script>
+<script>
+  function loadTable()
+  {
+    $.getJSON("api/printDB/", function(data) {
+      var rightContent = document.getElementById("rightcontent");
+      var tbl = document.createElement("table");
+      var tblBody = document.createElement("tbody");
+      var headerRow = document.createElement("tr");
+      var header1 = document.createElement("th");
+      var header2 = document.createElement("th");
+      var header3 = document.createElement("th");
+      var header4 = document.createElement("th");
+      var header5 = document.createElement("th");
+      var headerText = document.createTextNode("Name");
+      header1.appendChild(headerText);
+      headerText = document.createTextNode("IP");
+      header2.appendChild(headerText);
+      headerText = document.createTextNode("State");
+      header3.appendChild(headerText);
+      headerText = document.createTextNode("User");
+      header4.appendChild(headerText);
+      headerText = document.createTextNode("Email");
+      header5.appendChild(headerText);
+      headerRow.appendChild(header1);
+      headerRow.appendChild(header2);
+      headerRow.appendChild(header3);
+      headerRow.appendChild(header4);
+      headerRow.appendChild(header5);
+      tbl.appendChild(headerRow);
+      for( key in data ) {
+        var row = document.createElement("tr");
+        var cell = document.createElement("td");
+        var cellText = document.createTextNode(key);
+        cell.appendChild(cellText);
+        row.appendChild(cell);
+        for(var i = 0; i < 4; i++) {
+          var attrCell = document.createElement("td");
+          var attrText = document.createTextNode(data[key][i]);
+          attrCell.appendChild(attrText);
+          row.appendChild(attrCell);
+        }
+        tblBody.appendChild(row);
+      }
+      tbl.appendChild(tblBody);
+      if(rightContent.hasChildNodes()) {
+        rightContent.removeChild(rightContent.firstChild);
+      }
+      rightContent.appendChild(tbl);
+      tbl.setAttribute("border","2");
+    });
+  }
 </script>
 </html>

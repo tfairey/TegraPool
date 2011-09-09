@@ -31,7 +31,9 @@ while 1:
   c.execute("LOCK TABLE devices WRITE");
   c.execute("INSERT INTO devices (deviceid,deviceIP,state) VALUES ('"+
              info['NAME'][0]+"','" + info['IPADDR'][0] +
-             "','REBOOTED') ON DUPLICATE KEY UPDATE state='REBOOTED';")
+             "','AVAILABLE') ON DUPLICATE KEY UPDATE state='AVAILABLE';")
+  c.execute("UPDATE devices SET state='CHECKED_OUT' WHERE deviceIP ='" +
+            info['IPADDR'][0] + "' AND user IS NOT NULL;")
   c.execute("UNLOCK TABLES;")
   db.commit()
   c.close()
