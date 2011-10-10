@@ -27,6 +27,7 @@ while 1:
   #NOTE: Issue occurs if the PINGs arrive faster than
   #data can be written to the database.
   inputted = False
+  db = False
   while not inputted:
     try:
       db = MySQLdb.connect(user="tegra",db="TegraPool")
@@ -44,9 +45,9 @@ while 1:
       conn.close()
       inputted = True
     except:
-      if c:
-        c.close()
       if db: 
+        if c:
+          c.close()
         db.close()
       
 
