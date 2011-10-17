@@ -3,6 +3,9 @@ import web
 import MySQLdb
 import ldap
 import re
+import shutil
+import subprocess 
+import os
 from devicemanagerSUT import DeviceManagerSUT
 
 # URLs go here. "/api/" will be automatically prepended to each.
@@ -39,7 +42,7 @@ def resetDevice(ip):
 #Given a username and password, return the username's name and email.
 def ldapQuery(user, password):
   #Initialize ldap using the given username and password.
-  ldapConn = ldap.initialize("ldaps://ldap.mozilla.org/")
+  ldapConn = ldap.initialize("ldap://mv-ns.mv.mozilla.com/")
   username = "mail="+user+",o=com,dc=mozilla"
   ldapConn.protocol_version = ldap.VERSION3
   ldapConn.bind(username, password)
@@ -58,12 +61,39 @@ def ldapQuery(user, password):
   user = result_data[0][1]['cn'][0]
   email = result_data[0][1]['mail'][0]
   return user, email
-  
 
+def initUser(user):
+  username = user[:user.find('@')]
+  os.makedirs('/Users/'+username+'/')
+  #subprocess.call(["sudo", "mkdir", "/Users/"+username])
+  subprocess.call(["sudo", "dscl",".","create","/Users/"+username])
+  subprocess.call(["sudo", "dscl",".","create","/Users/"+username, "PrimateGroupID", "0"])
+  subprocess.call(["sudo", "dscl",".","create","/Users/"+username, "UniqueID", "0"])
+  subprocess.call(["sudo", "dscl",".","passwd","/Users/"+username, "giveMEtegra"])
+  #os.execlp("dscl . create /Users/"+username, "")
+  #os.execlp("dscl",".","create","/Users/"+username, "PrimaryGroupID", "0")
+  #os.execlp("dscl",".","create","/Users/"+username, "UniqueID", "0")
+
+
+def unInitUser(user):
+  username = user[:user.find('@')];
+  shutil.rmtree('/Users/'+username+'/')
+  #subprocess.call(["sudo", "rm", "-rf", "/Users/"+username+"/"])
+  subprocess.call(["sudo", "dscl",".","delete","/Users/"+username]);
+
+
+def isUserStillActive(user, db):
+  c = db.cursor();
+  c.execute("SELECT * from devices WHERE user = '" + user + "';")
+  if c.fetchone():
+    c.close()
+    return true
+  c.close()
+  return False
 
 #Finds an available device to use.
 #The devices are stored in a MySQL Database table 'devices'
-def findUnusedDevice(deviceType, user, password):
+def findUnusedDevice(deviceType, user, password, remote):
   #First, we need to check the LDAP server
   user, email = ldapQuery(user, password)
   #If user is not returned, then we have a bad login.
@@ -71,7 +101,8 @@ def findUnusedDevice(deviceType, user, password):
     return "Bad Username Or Password"
   #Setup DB Connection
   db = MySQLdb.connect(user="tegra",db="TegraPool")
-  c = db.cursor();
+  activeUser = isUserStillActive(user, db)
+  c = db.cursor()
   #Lock the table, as we don't want people checking them out simultaneously
   c.execute("LOCK TABLE devices WRITE;")
   c.execute("SELECT deviceIP, state FROM devices WHERE state = 'AVAILABLE';")
@@ -83,6 +114,8 @@ def findUnusedDevice(deviceType, user, password):
     c.close()
     db.commit()
     setupDevice(row[0])
+    if remote and not activeUser:
+      initUser(user);
     return row[0]
   c.execute("UNLOCK TABLES;");
   c.close()
@@ -103,18 +136,21 @@ def makeDeviceAvailable(ip):
   db = MySQLdb.connect(user="tegra",db="TegraPool")
   c = db.cursor();
   c.execute("LOCK TABLE devices WRITE;")
-  c.execute("SELECT state FROM devices WHERE deviceIP = '" + ip + "';")
+  c.execute("SELECT state, user FROM devices WHERE deviceIP = '" + ip + "';")
   row = c.fetchone();
   #If device is not in list, or not checked out, return false.
   if not row or row[0] != 'CHECKED_OUT':
     c.execute("UNLOCK TABLES;");
     c.close();
     return False
+  user = row[1]
   #Otherwise, update the device to be Rebooting
   c.execute("UPDATE devices SET state = 'REBOOTING', user = NULL, email = NULL WHERE deviceIP = '" + ip + "';")
   c.execute("UNLOCK TABLES;")
   db.commit()
   c.close()
+  if isUserStillActive(user, db):
+    unInitUser(user)
   db.close()
   resetDevice(ip)
   return True
@@ -159,7 +195,8 @@ class CheckoutHandler(object):
     print("User " + postdata["user"] + " Checked out device of type " + postdata["deviceType"])
     newDeviceIP = findUnusedDevice(postdata["deviceType"],
                                    postdata["user"],
-                                   postdata["password"])
+                                   postdata["password"],
+                                   postdata["remote"])
     if newDeviceIP and "Bad" in newDeviceIP:
       return newDeviceIP
     elif newDeviceIP:
@@ -206,3 +243,11 @@ class PrintDBHandler(object):
       responseDict[key[0]] = (key[1],key[2],key[3],key[4])
     db.close()
     return responseDict 
+    
+#if __name__ == '__main__':
+#  print "1"
+#  initUser('btest@test.test')
+#  print "2"
+#  raw_input("Type Something Now! ")
+#  print "3"
+#  unInitUser('btest@test.test')

@@ -31,6 +31,9 @@
       <label>Device Type</label>
       <select id="checkout-deviceType" type="text" required><option>Tegra</option><option>Other...</option></select>
     </div>
+    <div class="input-box">
+      <input id="checkout-remote" type="checkbox"/> I am working remote
+    </div>
     <div class="submit">
         <input type="submit" id="add-checkout-job" value="Check Out" />
     </div>
@@ -81,7 +84,8 @@ $(document).ready(function() {
         url: "api/checkout/",
         data: { 'user': $('#checkout-user').val(),
                 'password': $('#checkout-password').val(),
-                'deviceType': $('#checkout-deviceType').val()
+                'deviceType': $('#checkout-deviceType').val(),
+                'remote': $('#checkout-remote').val()
               },
         success: function(data) {
           loadTable();
