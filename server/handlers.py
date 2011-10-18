@@ -67,9 +67,10 @@ def initUser(user):
   os.makedirs('/Users/'+username+'/')
   #subprocess.call(["sudo", "mkdir", "/Users/"+username])
   subprocess.call(["sudo", "dscl",".","create","/Users/"+username])
-  subprocess.call(["sudo", "dscl",".","create","/Users/"+username, "PrimateGroupID", "0"])
-  subprocess.call(["sudo", "dscl",".","create","/Users/"+username, "UniqueID", "0"])
+  subprocess.call(["sudo", "dscl",".","create","/Users/"+username, "PrimateGroupID", "21"])
+  subprocess.call(["sudo", "dscl",".","create","/Users/"+username, "UniqueID", "502"])
   subprocess.call(["sudo", "dscl",".","passwd","/Users/"+username, "giveMEtegra"])
+  subprocess.call(["sudo", "dscl",".","create","/Users/"+username, "NFSHomeDirectory", "/Users/"+username])
   #os.execlp("dscl . create /Users/"+username, "")
   #os.execlp("dscl",".","create","/Users/"+username, "PrimaryGroupID", "0")
   #os.execlp("dscl",".","create","/Users/"+username, "UniqueID", "0")
@@ -82,12 +83,12 @@ def unInitUser(user):
   subprocess.call(["sudo", "dscl",".","delete","/Users/"+username]);
 
 
-def isUserStillActive(user, db):
+def isUserStillActive(email, db):
   c = db.cursor();
-  c.execute("SELECT * from devices WHERE user = '" + user + "';")
+  c.execute("SELECT * from devices WHERE email = '" + email + "';")
   if c.fetchone():
     c.close()
-    return true
+    return True
   c.close()
   return False
 
@@ -100,7 +101,7 @@ def findUnusedDevice(deviceType, user, password, remote):
   if not user:
     return "Bad Username Or Password"
   #Setup DB Connection
-  db = MySQLdb.connect(user="tegra",db="TegraPool")
+  db = MySQLdb.connect(user="tegra",passwd="pool",db="TegraPool")
   activeUser = isUserStillActive(user, db)
   c = db.cursor()
   #Lock the table, as we don't want people checking them out simultaneously
@@ -114,8 +115,9 @@ def findUnusedDevice(deviceType, user, password, remote):
     c.close()
     db.commit()
     setupDevice(row[0])
+    print "Remote = " + str(remote)
     if remote and not activeUser:
-      initUser(user);
+      initUser(email);
     return row[0]
   c.execute("UNLOCK TABLES;");
   c.close()
@@ -133,24 +135,24 @@ def makeDeviceAvailable(ip):
   else:
     print "Not satisying Regex"
     return False;
-  db = MySQLdb.connect(user="tegra",db="TegraPool")
+  db = MySQLdb.connect(user="tegra",passwd="pool",db="TegraPool")
   c = db.cursor();
   c.execute("LOCK TABLE devices WRITE;")
-  c.execute("SELECT state, user FROM devices WHERE deviceIP = '" + ip + "';")
+  c.execute("SELECT state, email FROM devices WHERE deviceIP = '" + ip + "';")
   row = c.fetchone();
   #If device is not in list, or not checked out, return false.
   if not row or row[0] != 'CHECKED_OUT':
     c.execute("UNLOCK TABLES;");
     c.close();
     return False
-  user = row[1]
+  email = row[1]
   #Otherwise, update the device to be Rebooting
   c.execute("UPDATE devices SET state = 'REBOOTING', user = NULL, email = NULL WHERE deviceIP = '" + ip + "';")
   c.execute("UNLOCK TABLES;")
   db.commit()
   c.close()
-  if isUserStillActive(user, db):
-    unInitUser(user)
+  if not isUserStillActive(email, db):
+    unInitUser(email)
   db.close()
   resetDevice(ip)
   return True
@@ -163,7 +165,7 @@ def getUsedList(email):
     email = emailMatch.groups()[0]
   else:
     return [];
-  db = MySQLdb.connect(user="tegra",db="TegraPool")
+  db = MySQLdb.connect(user="tegra",passwd="pool",db="TegraPool")
   c = db.cursor();
   c.execute("SELECT deviceid, deviceIP FROM devices WHERE email = '"
             + email + "';")
@@ -196,7 +198,7 @@ class CheckoutHandler(object):
     newDeviceIP = findUnusedDevice(postdata["deviceType"],
                                    postdata["user"],
                                    postdata["password"],
-                                   postdata["remote"])
+                                   postdata["remote"]=="Checked")
     if newDeviceIP and "Bad" in newDeviceIP:
       return newDeviceIP
     elif newDeviceIP:
@@ -236,7 +238,7 @@ class PrintDBHandler(object):
   def GET(self):
     print("Accessing entire device DB")
     args, body = templeton.handlers.get_request_parms()
-    db = MySQLdb.connect(user="tegra",db="TegraPool")
+    db = MySQLdb.connect(user="tegra",passwd="pool",db="TegraPool")
     result = getTable(db)
     responseDict = {}
     for key in result:
