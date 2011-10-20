@@ -102,8 +102,8 @@ def initUser(user,ftpSite, ip):
   mochiTestScript.close();
   refTestScript = open("runRefRemote.sh", "w")
   IPaddr = ip.split('.')
-  uniqueNumber = 10000+IPaddr[3]*1000+IPaddr[4]
-  refTestScript.write("unzip tests.zip\nadb disconnect\nadb connect "+ip+"\nadb uninstall org.mozilla.fennec\nadb install fennec.apk\npython reftest/remotereftest.py --deviceIP="+ip+" --appname=org.mozilla.fennec --xre-path=/objdir/dist/bin --utility-path=/objdir/dist/bin --http-port="+uniqueNumber);
+  uniqueNumber = str(10000+int(IPaddr[2])*1000+int(IPaddr[3]))
+  refTestScript.write("unzip tests.zip\nadb disconnect\nadb connect "+ip+"\nadb uninstall org.mozilla.fennec\nadb install fennec.apk\npython reftest/remotereftest.py --deviceIP="+ip+" --appname=org.mozilla.fennec --xre-path=/objdir/dist/bin --utility-path=/objdir/dist/bin --http-port="+uniqueNumber+" --ignore-window-size reftest/tests/layout/reftests/reftest-sanity/reftest.list");
   refTestScript.close();
   os.chmod("runMochiRemote.sh", stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO);
   os.chmod("runRefRemote.sh", stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO);
