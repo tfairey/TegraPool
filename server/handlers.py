@@ -100,12 +100,16 @@ def initUser(user,ftpSite, ip):
   mochiTestScript = open("runMochiRemote.sh", "w")
   mochiTestScript.write("unzip tests.zip\nadb disconnect\nadb connect "+ip+"\nadb uninstall org.mozilla.fennec\nadb install fennec.apk\npython mochitest/runtestsremote.py --deviceIP="+ip+" --devicePort=20701 --appname=org.mozilla.fennec --xre-path=/objdir/dist/bin --utility-path=/objdir/dist/bin");
   mochiTestScript.close();
+  talosTestScript = open("runTalosRemote.sh", "w")
+  talosTestScript.write("adb disconnect\nadb connect "+ip+"\nadb uninstall org.mozilla.fennec\nadb install fennec.apk\ncd /talos\npython remotePerfConfigurator.py -v -e org.mozilla.fennec --activeTests tpan --resultsServer '' --resultsLink '' --output ~/tpan.yaml --remoteDevice "+ip+" --webServer 10.250.2.10\npython run_tests.py -d -n ~/tpan.yml\ncd ~");
+  talosTestScript.close();
   refTestScript = open("runRefRemote.sh", "w")
   IPaddr = ip.split('.')
   uniqueNumber = str(10000+int(IPaddr[2])*1000+int(IPaddr[3]))
   refTestScript.write("unzip tests.zip\nadb disconnect\nadb connect "+ip+"\nadb uninstall org.mozilla.fennec\nadb install fennec.apk\npython reftest/remotereftest.py --deviceIP="+ip+" --appname=org.mozilla.fennec --xre-path=/objdir/dist/bin --utility-path=/objdir/dist/bin --http-port="+uniqueNumber+" --ignore-window-size reftest/tests/layout/reftests/reftest-sanity/reftest.list");
   refTestScript.close();
   os.chmod("runMochiRemote.sh", stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO);
+  os.chmod("runTalosRemote.sh", stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO);
   os.chmod("runRefRemote.sh", stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO);
 
 
