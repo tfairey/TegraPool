@@ -6,6 +6,8 @@ import re
 import shutil
 import subprocess 
 import os
+import stat
+from ftplib import FTP
 from devicemanagerSUT import DeviceManagerSUT
 
 # URLs go here. "/api/" will be automatically prepended to each.
@@ -62,18 +64,49 @@ def ldapQuery(user, password):
   email = result_data[0][1]['mail'][0]
   return user, email
 
-def initUser(user):
+def initUser(user,ftpSite, ip):
   username = user[:user.find('@')]
   os.makedirs('/Users/'+username+'/')
   #subprocess.call(["sudo", "mkdir", "/Users/"+username])
   subprocess.call(["sudo", "dscl",".","create","/Users/"+username])
   subprocess.call(["sudo", "dscl",".","create","/Users/"+username, "PrimateGroupID", "21"])
-  subprocess.call(["sudo", "dscl",".","create","/Users/"+username, "UniqueID", "502"])
+  subprocess.call(["sudo", "dscl",".","create","/Users/"+username, "UniqueID", "999"])
   subprocess.call(["sudo", "dscl",".","passwd","/Users/"+username, "giveMEtegra"])
   subprocess.call(["sudo", "dscl",".","create","/Users/"+username, "NFSHomeDirectory", "/Users/"+username])
-  #os.execlp("dscl . create /Users/"+username, "")
-  #os.execlp("dscl",".","create","/Users/"+username, "PrimaryGroupID", "0")
-  #os.execlp("dscl",".","create","/Users/"+username, "UniqueID", "0")
+  subprocess.call(["sudo", "chmod","0777", "/Users/"+username])
+
+  ftpDir = ftpSite[ftpSite.find('/pub/'):]
+  print "ftpDir = " + str(ftpDir)
+  os.chdir('/Users/' + username)
+  ftp = FTP('ftp.mozilla.org');
+  ftp.login();
+  ftp.cwd(ftpDir)
+  dir = ftp.nlst()
+  print "Dir = " + str(dir)
+  apkFile = None
+  tests = None
+  for fileName in dir:
+    if ".apk" in fileName:
+      apkFile = fileName
+      break
+  for fileName in dir:
+    if ".tests.zip" in fileName:
+      tests = fileName
+      break
+  ftp.sendcmd('PASV')
+  print "apkFile = " + apkFile
+  ftp.retrbinary('retr ' + apkFile, open("fennec.apk", 'wb').write)
+  ftp.retrbinary('retr ' + tests, open("tests.zip", 'wb').write)
+  mochiTestScript = open("runMochiRemote.sh", "w")
+  mochiTestScript.write("unzip tests.zip\nadb disconnect\nadb connect "+ip+"\nadb uninstall org.mozilla.fennec\nadb install fennec.apk\npython mochitest/runtestsremote.py --deviceIP="+ip+" --devicePort=20701 --appname=org.mozilla.fennec --xre-path=/objdir/dist/bin --utility-path=/objdir/dist/bin");
+  mochiTestScript.close();
+  refTestScript = open("runRefRemote.sh", "w")
+  IPaddr = ip.split('.')
+  uniqueNumber = 10000+IPaddr[3]*1000+IPaddr[4]
+  refTestScript.write("unzip tests.zip\nadb disconnect\nadb connect "+ip+"\nadb uninstall org.mozilla.fennec\nadb install fennec.apk\npython reftest/remotereftest.py --deviceIP="+ip+" --appname=org.mozilla.fennec --xre-path=/objdir/dist/bin --utility-path=/objdir/dist/bin --http-port="+uniqueNumber);
+  refTestScript.close();
+  os.chmod("runMochiRemote.sh", stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO);
+  os.chmod("runRefRemote.sh", stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO);
 
 
 def unInitUser(user):
@@ -94,7 +127,7 @@ def isUserStillActive(email, db):
 
 #Finds an available device to use.
 #The devices are stored in a MySQL Database table 'devices'
-def findUnusedDevice(deviceType, user, password, remote):
+def findUnusedDevice(deviceType, user, password, remote, ftp=None):
   #First, we need to check the LDAP server
   user, email = ldapQuery(user, password)
   #If user is not returned, then we have a bad login.
@@ -117,7 +150,7 @@ def findUnusedDevice(deviceType, user, password, remote):
     setupDevice(row[0])
     print "Remote = " + str(remote)
     if remote and not activeUser:
-      initUser(email);
+      initUser(email, ftp, row[0]);
     return row[0]
   c.execute("UNLOCK TABLES;");
   c.close()
@@ -198,7 +231,8 @@ class CheckoutHandler(object):
     newDeviceIP = findUnusedDevice(postdata["deviceType"],
                                    postdata["user"],
                                    postdata["password"],
-                                   postdata["remote"]=="Checked")
+                                   postdata["remote"],
+                                   postdata["ftp"])
     if newDeviceIP and "Bad" in newDeviceIP:
       return newDeviceIP
     elif newDeviceIP:

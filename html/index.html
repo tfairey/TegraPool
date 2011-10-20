@@ -7,6 +7,18 @@
     <link href='screen.css' rel='stylesheet' media='all'>
     <script src="/templeton/scripts/jquery-1.6.1.min.js"></script>
     <script src="/templeton/scripts/jquery-ui-1.8.13.custom.min.js"></script>
+    <script>
+    function checkRemote() {
+      if(document.getElementById('checkout-remote').checked )
+      {
+        document.getElementById('extraRemoteContent').hidden=false;
+      }
+      else
+      {
+        document.getElementById('extraRemoteContent').hidden=true;
+      }
+    }
+    </script>
     <title>TegraPool</title>
 </head>
 
@@ -32,7 +44,10 @@
       <select id="checkout-deviceType" type="text" required><option>Tegra</option><option>Other...</option></select>
     </div>
     <div class="input-box">
-      <input id="checkout-remote" type="checkbox" value="Checked"/> I am working remote
+      <input id="checkout-remote" type="checkbox" value="Checked" onclick="checkRemote()"/> I am working remote.
+    </div>
+    <div id="extraRemoteContent" class="input-box" hidden>
+      <label>FTP Build URL (i.e. folder that holds apk and tests.zip)</label><input id='ftp-site' type="text" name="build-location"/> 
     </div>
     <div class="submit">
         <input type="submit" id="add-checkout-job" value="Check Out" />
@@ -85,11 +100,17 @@ $(document).ready(function() {
         data: { 'user': $('#checkout-user').val(),
                 'password': $('#checkout-password').val(),
                 'deviceType': $('#checkout-deviceType').val(),
-                'remote': $('#checkout-remote').val()
+                'remote': $('#checkout-remote').val(),
+                'ftp': $('#ftp-site').val()
               },
         success: function(data) {
           loadTable();
-          alert(data);
+          if(document.getElementById('checkout-remote').checked ) {
+            alert(data + "\nYou can run tests by ssh-ing to "+$('#checkout-user').val().split('@')[0]+"@10.250.2.108 with the password giveMEtegra");
+          }
+          else {
+            alert(data);
+          }
         },
         error: function(obj, textStatus, errorThrown) {
           alert("Error Thrown!");
