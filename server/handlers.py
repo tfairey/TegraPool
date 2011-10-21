@@ -66,7 +66,7 @@ def ldapQuery(user, password):
 
 def initUser(user,ftpSite, ip):
   username = user[:user.find('@')]
-  if not os.access('/Users/'+username, F_OK):
+  if not os.access('/Users/'+username, os.F_OK):
     os.makedirs('/Users/'+username+'/')
     #subprocess.call(["sudo", "mkdir", "/Users/"+username])
     subprocess.call(["sudo", "dscl",".","create","/Users/"+username])
@@ -95,30 +95,31 @@ def initUser(user,ftpSite, ip):
       tests = fileName
       break
   ftp.sendcmd('PASV')
-  fennecFile = "fennec.apk"
+  fennecFile = "fennec"
   testsFile = "tests.zip"
   mochiFileName = "runMochiRemote.sh"
   refFileName = "runRefRemote.sh"
   talosFileName = "runTalosRemote.sh"
   talosConfigFile = "tpan.yml"
-  if os.access(fennecFile):
-    fennecFile += ip;
+  IPaddr = ip.split('.')
+  uniqueNumber = str(10000+int(IPaddr[2])*1000+int(IPaddr[3]))
+  if os.access(fennecFile+".apk", os.F_OK):
+    fennecFile += "."+ip;
     testsFile += ip;
     mochiFileName += ip;
     refFileName += ip;
     talosFileName += ip;
     talosConfigFile += ip;
+  fennecFile+=".apk"
   ftp.retrbinary('retr ' + apkFile, open(fennecFile, 'wb').write)
   ftp.retrbinary('retr ' + tests, open(testsFile, 'wb').write)
   mochiTestScript = open(mochiFileName, "w")
-  mochiTestScript.write("unzip "+testsFile+"\nadb disconnect\nadb connect "+ip+"\nadb uninstall org.mozilla.fennec\nadb install "+fennecFile+"\npython mochitest/runtestsremote.py --deviceIP="+ip+" --devicePort=20701 --appname=org.mozilla.fennec --xre-path=/objdir/dist/bin --utility-path=/objdir/dist/bin");
+  mochiTestScript.write("unzip "+testsFile+"\nadb disconnect\nadb connect "+ip+"\nadb uninstall org.mozilla.fennec\nadb install "+fennecFile+"\npython mochitest/runtestsremote.py --deviceIP="+ip+" --devicePort=20701 --appname=org.mozilla.fennec --xre-path=/objdir/dist/bin --utility-path=/objdir/dist/bin --http-port="+uniqueNumber);
   mochiTestScript.close();
   talosTestScript = open(talosFileName, "w")
   talosTestScript.write("adb disconnect\nadb connect "+ip+"\nadb uninstall org.mozilla.fennec\nadb install "+fennecFile+"\ncd /talos\npython remotePerfConfigurator.py -v -e org.mozilla.fennec --activeTests tpan --resultsServer '' --resultsLink '' --output ~/"+talosConfigFile+" --remoteDevice "+ip+" --webServer 10.250.2.108\npython run_tests.py -d -n ~/+"+talosConfigFile+"\ncd ~");
   talosTestScript.close();
   refTestScript = open(refFileName, "w")
-  IPaddr = ip.split('.')
-  uniqueNumber = str(10000+int(IPaddr[2])*1000+int(IPaddr[3]))
   refTestScript.write("unzip "+testsFile+"\nadb disconnect\nadb connect "+ip+"\nadb uninstall org.mozilla.fennec\nadb install "+fennecFile+"\npython reftest/remotereftest.py --deviceIP="+ip+" --appname=org.mozilla.fennec --xre-path=/objdir/dist/bin --utility-path=/objdir/dist/bin --http-port="+uniqueNumber+" --ignore-window-size reftest/tests/layout/reftests/reftest-sanity/reftest.list");
   refTestScript.close();
   os.chmod(mochiFileName, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO);
