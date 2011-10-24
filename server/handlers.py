@@ -78,6 +78,7 @@ def initUser(user,ftpSite, ip):
 
   ftpDir = ftpSite[ftpSite.find('/pub/'):]
   print "ftpDir = " + str(ftpDir)
+  currDir = os.getcwd()
   os.chdir('/Users/' + username)
   ftp = FTP('ftp.mozilla.org');
   ftp.login();
@@ -125,6 +126,7 @@ def initUser(user,ftpSite, ip):
   os.chmod(mochiFileName, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO);
   os.chmod(talosFileName, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO);
   os.chmod(refFileName, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO);
+  os.chdir(currDir)
 
 
 def unInitUser(user):
@@ -167,7 +169,7 @@ def findUnusedDevice(deviceType, user, password, remote, ftp=None):
     db.commit()
     setupDevice(row[0])
     print "Remote = " + str(remote)
-    if remote and not activeUser:
+    if remote and ftp and not activeUser:
       initUser(email, ftp, row[0]);
     return row[0]
   c.execute("UNLOCK TABLES;");
