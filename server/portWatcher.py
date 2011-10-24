@@ -23,6 +23,7 @@ while 1:
   #print info
   print "NAME = " + info['NAME'][0]
   print "IP = " + info['IPADDR'][0]
+  print "TYPE = " + info['HARDWARE'][0]
   #When a ping arrives, store the information in the devices table.
   #NOTE: Issue occurs if the PINGs arrive faster than
   #data can be written to the database.
@@ -33,8 +34,8 @@ while 1:
       db = MySQLdb.connect(user="tegra",db="TegraPool")
       c=db.cursor();
       c.execute("LOCK TABLE devices WRITE");
-      c.execute("INSERT INTO devices (deviceid,deviceIP,state) VALUES ('"+
-                 info['NAME'][0]+"','" + info['IPADDR'][0] +
+      c.execute("INSERT INTO devices (deviceid,deviceIP,deviceType,state) VALUES ('"+
+                 info['NAME'][0]+"','" + info['IPADDR'][0] +"','"+ info['HARDWARE'][0] +
                  "','AVAILABLE') ON DUPLICATE KEY UPDATE state='AVAILABLE';")
       c.execute("UPDATE devices SET state='CHECKED_OUT' WHERE deviceIP ='" +
                 info['IPADDR'][0] + "' AND user IS NOT NULL;")
