@@ -228,7 +228,7 @@ def getUsedList(email):
 #Quick method to return the majority of the device table.
 def getTable(db):
   c = db.cursor();
-  c.execute("SELECT deviceid, deviceIP, state, user, email FROM devices;")
+  c.execute("SELECT deviceid, deviceIP, deviceType, state, user, email FROM devices;")
   result = c.fetchall()
   newDict = {}
   c.close()

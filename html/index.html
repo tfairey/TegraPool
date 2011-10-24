@@ -70,7 +70,7 @@
   </form>
 
   <div id="checkinMain"></div>
-
+<!--
   <h2>What Am I Using?</h2>
   <p>
     To see what you have checked out, enter your username.
@@ -85,7 +85,7 @@
     </div>
   </form>
 
-  <div id="waiuMain"></div>
+  <div id="waiuMain"></div>-->
 </div>
 <div id="rightcontent"></div>
 <br style="clear:both"/>
@@ -138,6 +138,7 @@ $(document).ready(function() {
       $('#checkinMain').replaceWith('Submitted.');
       return false;
   });
+  /*
   $("form#waiuForm").submit(function() {
       $.ajax({
         type: 'POST',
@@ -153,7 +154,7 @@ $(document).ready(function() {
         dataType: 'json'
       });
       return false;
-  });
+  });*/
   loadTable()
 });
 </script>
@@ -170,16 +171,19 @@ $(document).ready(function() {
       var header3 = document.createElement("th");
       var header4 = document.createElement("th");
       var header5 = document.createElement("th");
+      var header6 = document.createElement("th");
       var headerText = document.createTextNode("Name");
       header1.appendChild(headerText);
       headerText = document.createTextNode("IP");
       header2.appendChild(headerText);
-      headerText = document.createTextNode("State");
+      headerText = document.createTextNode("Type");
       header3.appendChild(headerText);
-      headerText = document.createTextNode("User");
+      headerText = document.createTextNode("State");
       header4.appendChild(headerText);
-      headerText = document.createTextNode("Email");
+      headerText = document.createTextNode("User");
       header5.appendChild(headerText);
+      headerText = document.createTextNode("Email");
+      header6.appendChild(headerText);
       headerRow.appendChild(header1);
       headerRow.appendChild(header2);
       headerRow.appendChild(header3);
