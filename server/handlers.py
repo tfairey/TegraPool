@@ -64,8 +64,10 @@ def ldapQuery(user, password):
   email = result_data[0][1]['mail'][0]
   return user, email
 
+#This is the function which, if someone is going remote, will set up a quick temporary account for them.
 def initUser(user,ftpSite, ip):
   username = user[:user.find('@')]
+  #If they don't already have an account, create one for them.
   if not os.access('/Users/'+username, os.F_OK):
     os.makedirs('/Users/'+username+'/')
     #subprocess.call(["sudo", "mkdir", "/Users/"+username])
@@ -75,9 +77,11 @@ def initUser(user,ftpSite, ip):
     subprocess.call(["sudo", "dscl",".","passwd","/Users/"+username, "giveMEtegra"])
     subprocess.call(["sudo", "dscl",".","create","/Users/"+username, "NFSHomeDirectory", "/Users/"+username])
     subprocess.call(["sudo", "chmod","0777", "/Users/"+username])
-
+   
+  #Go to the FTP Site and collect the APK and ZIP files.
   ftpDir = ftpSite[ftpSite.find('/pub/'):]
   print "ftpDir = " + str(ftpDir)
+  #Make sure to get back to the current directory after this function so that there are no issues later
   currDir = os.getcwd()
   os.chdir('/Users/' + username)
   ftp = FTP('ftp.mozilla.org');
@@ -96,14 +100,15 @@ def initUser(user,ftpSite, ip):
       tests = fileName
       break
   ftp.sendcmd('PASV')
+
+  #At this point, all of the file names are created.
   fennecFile = "fennec"
   testsFile = "tests.zip"
   mochiFileName = "runMochiRemote.sh"
   refFileName = "runRefRemote.sh"
   talosFileName = "runTalosRemote.sh"
   talosConfigFile = "tpan.yml"
-  IPaddr = ip.split('.')
-  uniqueNumber = str(10000+int(IPaddr[2])*1000+int(IPaddr[3]))
+  #Because there could be alternate builds on alternate devices, we add the ip to the name for everything past the first one. 
   if os.access(fennecFile+".apk", os.F_OK):
     fennecFile += "."+ip;
     testsFile += ip;
@@ -114,6 +119,10 @@ def initUser(user,ftpSite, ip):
   fennecFile+=".apk"
   ftp.retrbinary('retr ' + apkFile, open(fennecFile, 'wb').write)
   ftp.retrbinary('retr ' + tests, open(testsFile, 'wb').write)
+  #Create a 'unique' indentifying port that will only be used for this device.
+  IPaddr = ip.split('.')
+  uniqueNumber = str(10000+int(IPaddr[2])*1000+int(IPaddr[3]))
+  #Create the scripts for each of the test types.
   mochiTestScript = open(mochiFileName, "w")
   mochiTestScript.write("unzip "+testsFile+"\nadb disconnect\nadb connect "+ip+"\nadb uninstall org.mozilla.fennec\nadb install "+fennecFile+"\npython mochitest/runtestsremote.py --deviceIP="+ip+" --devicePort=20701 --appname=org.mozilla.fennec --xre-path=/objdir/dist/bin --utility-path=/objdir/dist/bin --http-port="+uniqueNumber);
   mochiTestScript.close();
@@ -123,19 +132,22 @@ def initUser(user,ftpSite, ip):
   refTestScript = open(refFileName, "w")
   refTestScript.write("unzip "+testsFile+"\nadb disconnect\nadb connect "+ip+"\nadb uninstall org.mozilla.fennec\nadb install "+fennecFile+"\npython reftest/remotereftest.py --deviceIP="+ip+" --appname=org.mozilla.fennec --xre-path=/objdir/dist/bin --utility-path=/objdir/dist/bin --http-port="+uniqueNumber+" --ignore-window-size reftest/tests/layout/reftests/reftest-sanity/reftest.list");
   refTestScript.close();
+  #Make the three scripts totally readable and runnable.
   os.chmod(mochiFileName, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO);
   os.chmod(talosFileName, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO);
   os.chmod(refFileName, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO);
+  #Return to the old directory. Don't get stuck in a directory that will be destroyed
   os.chdir(currDir)
 
-
+#Remove the temporary user if he exists.
 def unInitUser(user):
   username = user[:user.find('@')];
-  shutil.rmtree('/Users/'+username+'/')
-  #subprocess.call(["sudo", "rm", "-rf", "/Users/"+username+"/"])
-  subprocess.call(["sudo", "dscl",".","delete","/Users/"+username]);
+  if os.access('/Users/'+username+'/', os.F_OK)
+    shutil.rmtree('/Users/'+username+'/')
+    #subprocess.call(["sudo", "rm", "-rf", "/Users/"+username+"/"])
+    subprocess.call(["sudo", "dscl",".","delete","/Users/"+username]);
 
-
+#Good to know if the user needs to be removed.
 def isUserStillActive(email, db):
   c = db.cursor();
   c.execute("SELECT * from devices WHERE email = '" + email + "';")
@@ -159,7 +171,7 @@ def findUnusedDevice(deviceType, user, password, remote, ftp=None):
   c = db.cursor()
   #Lock the table, as we don't want people checking them out simultaneously
   c.execute("LOCK TABLE devices WRITE;")
-  c.execute("SELECT deviceIP, state FROM devices WHERE state = 'AVAILABLE';")
+  c.execute("SELECT deviceIP, state FROM devices WHERE state = 'AVAILABLE' AND deviceType = '"+deviceType+"';")
   row = c.fetchone()
   if row:
     c.execute("UPDATE devices SET state = 'CHECKED_OUT', user = '" + user +
@@ -296,7 +308,7 @@ class PrintDBHandler(object):
     result = getTable(db)
     responseDict = {}
     for key in result:
-      responseDict[key[0]] = (key[1],key[2],key[3],key[4])
+      responseDict[key[0]] = (key[1],key[2],key[3],key[4], key[5])
     db.close()
     return responseDict 
     
