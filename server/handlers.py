@@ -110,12 +110,12 @@ def initUser(user,ftpSite, ip):
   talosConfigFile = "tpan.yml"
   #Because there could be alternate builds on alternate devices, we add the ip to the name for everything past the first one. 
   if os.access(fennecFile+".apk", os.F_OK):
-    fennecFile += "."+ip;
-    testsFile += ip;
-    mochiFileName += ip;
-    refFileName += ip;
-    talosFileName += ip;
-    talosConfigFile += ip;
+    fennecFile += ip.replace(".","");
+    testsFile += "."+ip;
+    mochiFileName += "."+ip;
+    refFileName += "."+ip;
+    talosFileName += "."+ip;
+    talosConfigFile += "."+ip;
   fennecFile+=".apk"
   ftp.retrbinary('retr ' + apkFile, open(fennecFile, 'wb').write)
   ftp.retrbinary('retr ' + tests, open(testsFile, 'wb').write)
