@@ -30,6 +30,7 @@ def resetDevice(ip):
   safeFiles = ["Android",".android_secure","LOST.DIR"]
   dm = DeviceManagerSUT(ip)
   doomedFiles = dm.listFiles('/mnt/sdcard/')
+  doomedFiles.extend(dm.listFiles('/data/local/tmp/')
   for fileName in doomedFiles:
     if fileName not in safeFiles:
       print "DELETING " + fileName
@@ -142,7 +143,7 @@ def initUser(user,ftpSite, ip):
 #Remove the temporary user if he exists.
 def unInitUser(user):
   username = user[:user.find('@')];
-  if os.access('/Users/'+username+'/', os.F_OK)
+  if os.access('/Users/'+username+'/', os.F_OK):
     shutil.rmtree('/Users/'+username+'/')
     #subprocess.call(["sudo", "rm", "-rf", "/Users/"+username+"/"])
     subprocess.call(["sudo", "dscl",".","delete","/Users/"+username]);
