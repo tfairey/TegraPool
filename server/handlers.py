@@ -84,61 +84,63 @@ def initUser(user,ftpSite, ip):
   print "ftpDir = " + str(ftpDir)
   #Make sure to get back to the current directory after this function so that there are no issues later
   currDir = os.getcwd()
-  os.chdir('/Users/' + username)
-  ftp = FTP('ftp.mozilla.org');
-  ftp.login();
-  ftp.cwd(ftpDir)
-  dir = ftp.nlst()
-  print "Dir = " + str(dir)
-  apkFile = None
-  tests = None
-  for fileName in dir:
-    if ".apk" in fileName:
-      apkFile = fileName
-      break
-  for fileName in dir:
-    if ".tests.zip" in fileName:
-      tests = fileName
-      break
-  ftp.sendcmd('PASV')
+  try:
+    os.chdir('/Users/' + username)
+    ftp = FTP('ftp.mozilla.org');
+    ftp.login();
+    ftp.cwd(ftpDir)
+    dir = ftp.nlst()
+    print "Dir = " + str(dir)
+    apkFile = None
+    tests = None
+    for fileName in dir:
+      if ".apk" in fileName:
+        apkFile = fileName
+        break
+    for fileName in dir:
+      if ".tests.zip" in fileName:
+        tests = fileName
+        break
+    ftp.sendcmd('PASV')
 
-  #At this point, all of the file names are created.
-  fennecFile = "fennec"
-  testsFile = "tests.zip"
-  mochiFileName = "runMochiRemote.sh"
-  refFileName = "runRefRemote.sh"
-  talosFileName = "runTalosRemote.sh"
-  talosConfigFile = "tpan.yml"
-  #Because there could be alternate builds on alternate devices, we add the ip to the name for everything past the first one. 
-  if os.access(fennecFile+".apk", os.F_OK):
-    fennecFile += ip.replace(".","");
-    testsFile += "."+ip;
-    mochiFileName += "."+ip;
-    refFileName += "."+ip;
-    talosFileName += "."+ip;
-    talosConfigFile += "."+ip;
-  fennecFile+=".apk"
-  ftp.retrbinary('retr ' + apkFile, open(fennecFile, 'wb').write)
-  ftp.retrbinary('retr ' + tests, open(testsFile, 'wb').write)
-  #Create a 'unique' indentifying port that will only be used for this device.
-  IPaddr = ip.split('.')
-  uniqueNumber = str(10000+int(IPaddr[2])*1000+int(IPaddr[3]))
-  #Create the scripts for each of the test types.
-  mochiTestScript = open(mochiFileName, "w")
-  mochiTestScript.write("unzip "+testsFile+"\nadb disconnect\nadb connect "+ip+"\nadb uninstall org.mozilla.fennec\nadb install "+fennecFile+"\npython mochitest/runtestsremote.py --deviceIP="+ip+" --devicePort=20701 --appname=org.mozilla.fennec --xre-path=/objdir/dist/bin --utility-path=/objdir/dist/bin --http-port="+uniqueNumber);
-  mochiTestScript.close();
-  talosTestScript = open(talosFileName, "w")
-  talosTestScript.write("adb disconnect\nadb connect "+ip+"\nadb uninstall org.mozilla.fennec\nadb install "+fennecFile+"\ncd /talos\npython remotePerfConfigurator.py -v -e org.mozilla.fennec --activeTests tpan --resultsServer '' --resultsLink '' --output ~/"+talosConfigFile+" --remoteDevice "+ip+" --webServer tegrapool.build.mtv1.mozilla.com:8080\npython run_tests.py -d -n ~/"+talosConfigFile+"\ncd ~");
-  talosTestScript.close();
-  refTestScript = open(refFileName, "w")
-  refTestScript.write("unzip "+testsFile+"\nadb disconnect\nadb connect "+ip+"\nadb uninstall org.mozilla.fennec\nadb install "+fennecFile+"\npython reftest/remotereftest.py --deviceIP="+ip+" --appname=org.mozilla.fennec --xre-path=/objdir/dist/bin --utility-path=/objdir/dist/bin --http-port="+uniqueNumber+" --ignore-window-size reftest/tests/layout/reftests/reftest-sanity/reftest.list");
-  refTestScript.close();
-  #Make the three scripts totally readable and runnable.
-  os.chmod(mochiFileName, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO);
-  os.chmod(talosFileName, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO);
-  os.chmod(refFileName, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO);
-  #Return to the old directory. Don't get stuck in a directory that will be destroyed
-  os.chdir(currDir)
+    #At this point, all of the file names are created.
+    fennecFile = "fennec"
+    testsFile = "tests.zip"
+    mochiFileName = "runMochiRemote.sh"
+    refFileName = "runRefRemote.sh"
+    talosFileName = "runTalosRemote.sh"
+    talosConfigFile = "tpan.yml"
+    #Because there could be alternate builds on alternate devices, we add the ip to the name for everything past the first one. 
+    if os.access(fennecFile+".apk", os.F_OK):
+      fennecFile += ip.replace(".","");
+      testsFile += "."+ip;
+      mochiFileName += "."+ip;
+      refFileName += "."+ip;
+      talosFileName += "."+ip;
+      talosConfigFile += "."+ip;
+    fennecFile+=".apk"
+    ftp.retrbinary('retr ' + apkFile, open(fennecFile, 'wb').write)
+    ftp.retrbinary('retr ' + tests, open(testsFile, 'wb').write)
+    #Create a 'unique' indentifying port that will only be used for this device.
+    IPaddr = ip.split('.')
+    uniqueNumber = str(10000+int(IPaddr[2])*1000+int(IPaddr[3]))
+    #Create the scripts for each of the test types.
+    mochiTestScript = open(mochiFileName, "w")
+    mochiTestScript.write("unzip "+testsFile+"\nadb disconnect\nadb connect "+ip+"\nadb uninstall org.mozilla.fennec\nadb install "+fennecFile+"\npython mochitest/runtestsremote.py --deviceIP="+ip+" --devicePort=20701 --appname=org.mozilla.fennec --xre-path=/objdir/dist/bin --utility-path=/objdir/dist/bin --http-port="+uniqueNumber);
+    mochiTestScript.close();
+    talosTestScript = open(talosFileName, "w")
+    talosTestScript.write("adb disconnect\nadb connect "+ip+"\nadb uninstall org.mozilla.fennec\nadb install "+fennecFile+"\ncd /talos\npython remotePerfConfigurator.py -v -e org.mozilla.fennec --activeTests tpan --resultsServer '' --resultsLink '' --output ~/"+talosConfigFile+" --remoteDevice "+ip+" --webServer tegrapool.build.mtv1.mozilla.com:8080\npython run_tests.py -d -n ~/"+talosConfigFile+"\ncd ~");
+    talosTestScript.close();
+    refTestScript = open(refFileName, "w")
+    refTestScript.write("unzip "+testsFile+"\nadb disconnect\nadb connect "+ip+"\nadb uninstall org.mozilla.fennec\nadb install "+fennecFile+"\npython reftest/remotereftest.py --deviceIP="+ip+" --appname=org.mozilla.fennec --xre-path=/objdir/dist/bin --utility-path=/objdir/dist/bin --http-port="+uniqueNumber+" --ignore-window-size reftest/tests/layout/reftests/reftest-sanity/reftest.list");
+    refTestScript.close();
+    #Make the three scripts totally readable and runnable.
+    os.chmod(mochiFileName, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO);
+    os.chmod(talosFileName, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO);
+    os.chmod(refFileName, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO);
+  finally:
+    #Return to the old directory. Don't get stuck in a directory that will be destroyed
+    os.chdir(currDir)
 
 #Remove the temporary user if he exists.
 def unInitUser(user):
